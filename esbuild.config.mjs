@@ -1,6 +1,8 @@
 import esbuild from "esbuild";
 import process from "process";
 import { builtinModules } from 'node:module';
+import fs from "node:fs/promises";
+import path from "node:path";
 
 const banner =
 `/*
@@ -10,6 +12,20 @@ if you want to view the source, please visit the github repository of this plugi
 `;
 
 const prod = (process.argv[2] === "production");
+
+const ensureSqlWasm = async () => {
+	try {
+		const source = path.resolve("node_modules/sql.js/dist/sql-wasm.wasm");
+		const target = path.resolve("sql-wasm.wasm");
+		await fs.copyFile(source, target);
+	} catch (err) {
+		if (!prod) {
+			console.warn("Warning: sql-wasm.wasm not copied. Run npm install.", err);
+		}
+	}
+};
+
+await ensureSqlWasm();
 
 const context = await esbuild.context({
 	banner: {

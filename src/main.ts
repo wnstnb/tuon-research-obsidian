@@ -1,99 +1,114 @@
-import {App, Editor, MarkdownView, Modal, Notice, Plugin} from 'obsidian';
-import {DEFAULT_SETTINGS, MyPluginSettings, SampleSettingTab} from "./settings";
+import { Notice, Plugin } from "obsidian";
+import { DeepResearchSettingTab, DEFAULT_SETTINGS, DeepResearchSettings } from "./settings";
+import { SCHEMA_STATEMENTS } from "./db/schema";
+import { SqliteService } from "./db/sqliteService";
+import { ResearchRepo } from "./db/researchRepo";
+import { DeepResearchClient } from "./research/deepResearchClient";
+import { ReportNoteWriter } from "./research/reportNoteWriter";
+import { ResearchJobManager } from "./research/jobManager";
+import { ResearchModal } from "./ui/ResearchModal";
+import { ResearchJobsView, VIEW_TYPE_RESEARCH_JOBS } from "./ui/ResearchJobsView";
 
-// Remember to rename these classes and interfaces!
-
-export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
+export default class TuonDeepResearchPlugin extends Plugin {
+	settings: DeepResearchSettings;
+	private db!: SqliteService;
+	private repo!: ResearchRepo;
+	private client!: DeepResearchClient;
+	private noteWriter!: ReportNoteWriter;
+	private jobManager!: ResearchJobManager;
 
 	async onload() {
 		await this.loadSettings();
+		await this.ensureLocalUserId();
 
-		// This creates an icon in the left ribbon.
-		this.addRibbonIcon('dice', 'Sample', (evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
+		this.db = new SqliteService(this.app, this.manifest.id);
+		await this.db.init();
+		SCHEMA_STATEMENTS.forEach((stmt) => this.db.exec(stmt));
+
+		this.repo = new ResearchRepo(this.db);
+		this.client = new DeepResearchClient(
+			this.settings.deepResearchServerUrl,
+			this.settings.deepResearchApiKey
+		);
+		this.noteWriter = new ReportNoteWriter(this.app);
+		this.jobManager = new ResearchJobManager(
+			this.repo,
+			this.client,
+			this.noteWriter,
+			this.settings.localUserId,
+			this.settings.pollIntervalMs,
+			this.settings.outputFolder,
+			this.settings.includeOptimizedPromptInNote
+		);
+
+		this.registerView(VIEW_TYPE_RESEARCH_JOBS, (leaf) => new ResearchJobsView(leaf, this.repo));
+
+		this.addRibbonIcon("search", "Deep Research", () => {
+			new ResearchModal(this.app, this.settings, this.jobManager).open();
 		});
 
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status bar text');
-
-		// This adds a simple command that can be triggered anywhere
 		this.addCommand({
-			id: 'open-modal-simple',
-			name: 'Open modal (simple)',
+			id: "tuon-deep-research-open-modal",
+			name: "Tuon: Deep Research",
 			callback: () => {
-				new SampleModal(this.app).open();
-			}
+				new ResearchModal(this.app, this.settings, this.jobManager).open();
+			},
 		});
-		// This adds an editor command that can perform some operation on the current editor instance
+
 		this.addCommand({
-			id: 'replace-selected',
-			name: 'Replace selected content',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				editor.replaceSelection('Sample editor command');
-			}
-		});
-		// This adds a complex command that can check whether the current state of the app allows execution of the command
-		this.addCommand({
-			id: 'open-modal-complex',
-			name: 'Open modal (complex)',
-			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
-					if (!checking) {
-						new SampleModal(this.app).open();
-					}
-
-					// This command will only show up in Command Palette when the check function returns true
-					return true;
-				}
-				return false;
-			}
+			id: "tuon-deep-research-open-jobs",
+			name: "Tuon: Open Deep Research jobs",
+			callback: () => {
+				void this.activateJobsView();
+			},
 		});
 
-		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
-
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			new Notice("Click");
-		});
-
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
-
+		this.addSettingTab(new DeepResearchSettingTab(this.app, this));
 	}
 
 	onunload() {
+		void this.db?.close();
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData() as Partial<MyPluginSettings>);
+		this.settings = Object.assign(
+			{},
+			DEFAULT_SETTINGS,
+			(await this.loadData()) as Partial<DeepResearchSettings>
+		);
 	}
 
 	async saveSettings() {
 		await this.saveData(this.settings);
+		if (this.client) {
+			this.client.updateConfig(this.settings.deepResearchServerUrl, this.settings.deepResearchApiKey);
+		}
+		if (this.jobManager) {
+			this.jobManager.updateConfig(
+				this.settings.pollIntervalMs,
+				this.settings.outputFolder,
+				this.settings.includeOptimizedPromptInNote
+			);
+		}
 	}
-}
 
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
+	async ensureLocalUserId(): Promise<void> {
+		if (this.settings.localUserId) return;
+		if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+			this.settings.localUserId = crypto.randomUUID();
+		} else {
+			this.settings.localUserId = `local_${Date.now()}`;
+		}
+		await this.saveSettings();
+		new Notice("Initialized local user ID for Deep Research.");
 	}
 
-	onOpen() {
-		let {contentEl} = this;
-		contentEl.setText('Woah!');
-	}
-
-	onClose() {
-		const {contentEl} = this;
-		contentEl.empty();
+	private async activateJobsView(): Promise<void> {
+		const leaf =
+			this.app.workspace.getLeavesOfType(VIEW_TYPE_RESEARCH_JOBS)[0] ||
+			this.app.workspace.getRightLeaf(false);
+		if (!leaf) return;
+		await leaf.setViewState({ type: VIEW_TYPE_RESEARCH_JOBS, active: true });
+		this.app.workspace.revealLeaf(leaf);
 	}
 }
