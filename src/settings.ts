@@ -20,10 +20,10 @@ export const DEFAULT_SETTINGS: DeepResearchSettings = {
 	deepResearchServerUrl: "https://tuon-deep-research.onrender.com",
 	deepResearchApiKey: "",
 	openRouterApiKey: "",
-	openRouterModel: "openai/gpt-5-mini",
+	openRouterModel: "openai/gpt-oss-120b",
 	openRouterReferer: "",
 	openRouterAppTitle: "Tuon Deep Research",
-	autoOptimizePrompt: true,
+	autoOptimizePrompt: false,
 	includeOptimizedPromptInNote: true,
 	outputFolder: "Deep Research",
 	pollIntervalMs: 4000,
@@ -139,18 +139,6 @@ export class DeepResearchSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.openRouterReferer)
 					.onChange(async (value) => {
 						this.plugin.settings.openRouterReferer = value.trim();
-						await this.plugin.saveSettings();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Optimize prompts before submit")
-			.setDesc("If enabled, optimization runs by default (you can still skip).")
-			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.autoOptimizePrompt)
-					.onChange(async (value) => {
-						this.plugin.settings.autoOptimizePrompt = value;
 						await this.plugin.saveSettings();
 					})
 			);

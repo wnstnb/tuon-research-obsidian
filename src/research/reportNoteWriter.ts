@@ -24,8 +24,6 @@ export class ReportNoteWriter {
 
 	private buildContent(data: ReportNoteData): string {
 		const lines: string[] = [];
-		lines.push(`# ${data.title || "Research report"}`.trim());
-		lines.push("");
 		if (data.summary?.trim()) {
 			lines.push("## Summary");
 			lines.push("");
@@ -34,7 +32,7 @@ export class ReportNoteWriter {
 		}
 		lines.push("## Report");
 		lines.push("");
-		lines.push(data.markdown.trim());
+		lines.push(this.stripDuplicateTitle(data.markdown, data.title));
 		lines.push("");
 
 		if (data.includePromptSection) {
@@ -56,6 +54,79 @@ export class ReportNoteWriter {
 		}
 
 		return lines.join("\n");
+	}
+
+	private stripDuplicateTitle(markdown: string, title: string): string {
+		const cleaned = (markdown || "").trim();
+		if (!cleaned) return "";
+		const lines = cleaned.split(/\r?\n/);
+		let firstIndex = 0;
+		while (firstIndex < lines.length && !(lines[firstIndex] ?? "").trim()) {
+			firstIndex += 1;
+		}
+		if (firstIndex >= lines.length) return cleaned;
+		const firstLine = (lines[firstIndex] ?? "").trim();
+		if (firstLine.startsWith("#")) {
+			const heading = firstLine.replace(/^#+\s*/, "").trim();
+			const normalizedHeading = this.normalizeHeading(heading);
+			const normalizedHeadingNoDate = this.normalizeHeading(this.stripDateSuffix(heading));
+			const normalizedTitle = this.normalizeHeading(title);
+			const normalizedTitleNoDate = this.normalizeHeading(this.stripDateSuffix(title));
+			if (
+				this.isHeadingMatch(
+					normalizedHeading,
+					normalizedHeadingNoDate,
+					normalizedTitle,
+					normalizedTitleNoDate
+				)
+			) {
+				lines.splice(firstIndex, 1);
+				if (firstIndex < lines.length && !(lines[firstIndex] ?? "").trim()) {
+					lines.splice(firstIndex, 1);
+				}
+			}
+		}
+		return lines.join("\n").trim();
+	}
+
+	private isHeadingMatch(
+		heading: string,
+		headingNoDate: string,
+		title: string,
+		titleNoDate: string
+	): boolean {
+		const targets = [title, titleNoDate].filter((value) => value && value.trim().length > 0);
+		const headings = [heading, headingNoDate].filter((value) => value && value.trim().length > 0);
+		if (!targets.length || !headings.length) return false;
+		const minLength = 8;
+		for (const h of headings) {
+			for (const t of targets) {
+				if (h === t) return true;
+				if (h.length >= minLength && t.startsWith(h)) return true;
+				if (t.length >= minLength && h.startsWith(t)) return true;
+			}
+		}
+		return false;
+	}
+
+	private stripDateSuffix(value: string): string {
+		const trimmed = (value || "").trim();
+		if (!trimmed) return "";
+		const isoDatePattern = /\s*[-–—]\s*\d{4}-\d{2}-\d{2}\s*$/;
+		const isoParenPattern = /\s*\(\d{4}-\d{2}-\d{2}\)\s*$/;
+		const longDatePattern = /\s*[-–—]\s*[A-Za-z]+\s+\d{1,2},\s+\d{4}\s*$/;
+		return trimmed
+			.replace(isoParenPattern, "")
+			.replace(isoDatePattern, "")
+			.replace(longDatePattern, "")
+			.trim();
+	}
+
+	private normalizeHeading(value: string): string {
+		return (value || "")
+			.toLowerCase()
+			.replace(/[^a-z0-9]+/g, " ")
+			.trim();
 	}
 
 	private async ensureFolder(folderPath: string): Promise<void> {

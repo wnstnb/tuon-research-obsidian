@@ -41,7 +41,9 @@ export default class TuonDeepResearchPlugin extends Plugin {
 			this.settings.includeOptimizedPromptInNote
 		);
 
-		this.registerView(VIEW_TYPE_RESEARCH_JOBS, (leaf) => new ResearchJobsView(leaf, this.repo));
+		this.registerView(VIEW_TYPE_RESEARCH_JOBS, (leaf) =>
+			new ResearchJobsView(leaf, this.repo, this.settings, this.jobManager)
+		);
 
 		this.addRibbonIcon("search", "Deep Research", () => {
 			new ResearchModal(this.app, this.settings, this.jobManager).open();

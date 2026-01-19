@@ -6,3 +6,382 @@ available in the app when your plugin is enabled.
 If your plugin does not need CSS, delete this file.
 
 */
+.tuon-research-modal textarea.tuon-research-textarea {
+	width: 100%;
+	min-height: 120px;
+	resize: vertical;
+	margin-bottom: 8px;
+}
+
+.tuon-research-controls {
+	display: flex;
+	gap: 8px;
+	margin: 8px 0;
+}
+
+.tuon-research-jobs-view .tuon-research-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 12px;
+}
+
+.tuon-research-layout {
+	display: flex;
+	gap: 16px;
+}
+
+.tuon-research-list {
+	flex: 0 0 35%;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.tuon-research-list button {
+	text-align: left;
+}
+
+.tuon-research-list button.is-active {
+	font-weight: 600;
+}
+
+.tuon-research-detail {
+	flex: 1;
+}
+
+/* Deep Research jobs view - sidebar flyout layout */
+.tuon-research-jobs-view {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	gap: 8px;
+}
+
+.tuon-dr-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 8px 8px 0;
+}
+
+.tuon-dr-title {
+	font-size: 0.8rem;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--text-muted);
+}
+
+.tuon-dr-header-actions {
+	display: flex;
+	gap: 6px;
+}
+
+.tuon-dr-body {
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+	padding: 8px;
+}
+
+.tuon-dr-tabs-list {
+	display: flex;
+	gap: 6px;
+	margin-bottom: 8px;
+}
+
+.tuon-dr-tab {
+	padding: 4px 10px;
+	border-radius: 8px;
+	border: 1px solid var(--background-modifier-border);
+	background: var(--background-secondary);
+	font-size: 12px;
+}
+
+.tuon-dr-tab.is-active {
+	background: var(--background-secondary);
+	color: var(--text-normal);
+	font-weight: 600;
+	box-shadow: 0 -1px 0 var(--background-secondary);
+}
+
+.tuon-dr-panels {
+	flex: 1;
+	min-height: 0;
+	display: flex;
+}
+
+.tuon-dr-panel {
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
+	display: none;
+}
+
+.tuon-dr-panel.is-active {
+	display: block;
+}
+
+.tuon-dr-section {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.tuon-dr-label {
+	font-weight: 600;
+}
+
+.tuon-dr-helper {
+	font-size: 11px;
+	color: var(--text-muted);
+}
+
+.tuon-dr-action-row {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+}
+
+.tuon-dr-action-left {
+	flex: 1;
+	min-width: 180px;
+}
+
+.tuon-dr-doc-input {
+	width: 100%;
+}
+
+.tuon-dr-actions {
+	display: flex;
+	gap: 6px;
+}
+
+.tuon-dr-toggle {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 12px;
+	color: var(--text-muted);
+}
+
+.tuon-dr-input-card {
+	border: 1px solid var(--background-modifier-border);
+	background: var(--background-secondary);
+	border-radius: 8px;
+	padding: 8px;
+}
+
+.tuon-dr-textarea {
+	width: 100%;
+	min-height: 220px;
+	resize: vertical;
+	background: transparent;
+}
+
+.tuon-dr-history-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.tuon-dr-history-controls {
+	margin-bottom: 8px;
+}
+
+.tuon-dr-history-search {
+	width: 100%;
+	padding: 6px 8px;
+	border-radius: 6px;
+	border: 1px solid var(--background-modifier-border);
+	background: var(--background-secondary);
+}
+
+.tuon-dr-history-date {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	margin-top: 4px;
+}
+
+.tuon-dr-history-item {
+	text-align: left;
+	border: 1px solid var(--background-modifier-border);
+	background: var(--background-secondary);
+	border-radius: 8px;
+	padding: 12px 8px;
+	min-height: 56px;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+}
+
+.tuon-dr-history-title {
+	font-weight: 600;
+	margin-bottom: 4px;
+}
+
+.tuon-dr-history-meta {
+	font-size: 11px;
+	color: var(--text-muted);
+}
+
+.tuon-dr-empty {
+	font-size: 12px;
+	color: var(--text-muted);
+}
+
+.tuon-dr-detail-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 8px;
+}
+
+.tuon-dr-back {
+	padding: 2px 6px;
+	border-radius: 6px;
+	border: 1px solid var(--background-modifier-border);
+	background: var(--background-secondary);
+}
+
+.tuon-dr-detail-title {
+	flex: 1;
+	min-width: 0;
+}
+
+.tuon-dr-detail-heading {
+	font-weight: 600;
+	margin-bottom: 2px;
+}
+
+.tuon-dr-detail-status {
+	font-size: 11px;
+	color: var(--text-muted);
+}
+
+.tuon-dr-card {
+	border: 1px solid var(--background-modifier-border);
+	background: var(--background-secondary);
+	border-radius: 8px;
+	padding: 8px;
+	margin-bottom: 8px;
+}
+
+.tuon-dr-card-title {
+	font-size: 12px;
+	font-weight: 600;
+	margin-bottom: 6px;
+}
+
+.tuon-dr-card-toggle {
+	width: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	text-align: left;
+	background: none;
+	border: none;
+	padding: 6px 8px;
+	color: inherit;
+	cursor: pointer;
+}
+
+.tuon-dr-card-toggle .tuon-dr-card-title {
+	margin-bottom: 0;
+}
+
+.tuon-dr-card-toggle-label {
+	font-size: 11px;
+	color: var(--text-muted);
+}
+
+.tuon-dr-card-toggle-actions {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.tuon-dr-copy-button {
+	border: none;
+	background: transparent;
+	padding: 2px;
+	color: var(--text-muted);
+	cursor: pointer;
+}
+
+.tuon-dr-copy-button:hover {
+	color: var(--text-normal);
+}
+
+.tuon-dr-card-body {
+	margin-top: 6px;
+}
+
+.tuon-dr-json {
+	font-family: var(--font-monospace, monospace);
+	font-size: 11px;
+}
+
+.tuon-dr-button-with-spinner {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.tuon-dr-spinner {
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	border: 2px solid var(--background-modifier-border);
+	border-top-color: var(--text-muted);
+	animation: tuon-dr-spin 0.8s linear infinite;
+}
+
+@keyframes tuon-dr-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.tuon-dr-card-content {
+	font-size: 12px;
+	white-space: pre-wrap;
+}
+
+.tuon-dr-events {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.tuon-dr-event-item {
+	font-size: 11px;
+	color: var(--text-muted);
+}
+
+.tuon-dr-button {
+	padding: 4px 8px;
+	border-radius: 6px;
+	border: 1px solid var(--background-modifier-border);
+	background: var(--background-secondary);
+}
+
+.tuon-dr-button:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+.tuon-dr-primary {
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	border-color: var(--interactive-accent);
+}

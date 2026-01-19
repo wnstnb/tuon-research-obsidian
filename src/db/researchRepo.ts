@@ -204,7 +204,7 @@ export class ResearchRepo {
 
 	insertEvent(event: ResearchEventRow): void {
 		this.db.run(
-			`INSERT INTO research_job_events (
+			`INSERT OR IGNORE INTO research_job_events (
 				id, job_id, user_id, type, phase, step, message, details, progress,
 				section_id, section_title, section_index, total_sections, created_at
 			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,

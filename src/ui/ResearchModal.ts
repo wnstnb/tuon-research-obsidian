@@ -10,7 +10,6 @@ export class ResearchModal extends Modal {
 	private optimizedOutput!: HTMLTextAreaElement;
 	private optimizeButton!: HTMLButtonElement;
 	private submitButton!: HTMLButtonElement;
-	private useOptimized = true;
 	private optimizing = false;
 	private optimizedPrompt = "";
 
@@ -18,7 +17,6 @@ export class ResearchModal extends Modal {
 		super(app);
 		this.settings = settings;
 		this.jobManager = jobManager;
-		this.useOptimized = settings.autoOptimizePrompt;
 	}
 
 	onOpen() {
@@ -36,15 +34,6 @@ export class ResearchModal extends Modal {
 		const controls = contentEl.createDiv({ cls: "tuon-research-controls" });
 		this.optimizeButton = controls.createEl("button", { text: "Optimize prompt" });
 		this.submitButton = controls.createEl("button", { text: "Run research" });
-
-		new Setting(contentEl)
-			.setName("Use optimized prompt")
-			.setDesc("Default is on; you can skip optimization if needed.")
-			.addToggle((toggle) =>
-				toggle.setValue(this.useOptimized).onChange((value) => {
-					this.useOptimized = value;
-				})
-			);
 
 		contentEl.createEl("label", { text: "Optimized prompt (preview)" });
 		this.optimizedOutput = contentEl.createEl("textarea", {
@@ -94,28 +83,19 @@ export class ResearchModal extends Modal {
 			return;
 		}
 
-		let optimizedPrompt = this.optimizedPrompt;
-		const canOptimize = !!this.settings.openRouterApiKey?.trim();
-		const shouldOptimize = this.useOptimized && canOptimize;
-		if (this.useOptimized && !canOptimize) {
-			new Notice("Missing OpenRouter API key; submitting original prompt.");
-		}
-		if (shouldOptimize && !optimizedPrompt) {
-			await this.handleOptimize();
-			optimizedPrompt = this.optimizedPrompt;
-		}
-
-		const promptToUse = shouldOptimize && optimizedPrompt ? optimizedPrompt : rawPrompt;
+		const optimizedPrompt = this.optimizedPrompt.trim();
+		const promptToUse = optimizedPrompt ? optimizedPrompt : rawPrompt;
+		const usedOptimized = !!optimizedPrompt;
 		const now = new Date().toISOString();
 		try {
 			await this.jobManager.submitJob({
 				originalPrompt: rawPrompt,
 				optimizedPrompt: promptToUse,
 				optimizerMeta: {
-					optimizedAt: optimizedPrompt ? now : null,
+					optimizedAt: usedOptimized ? now : null,
 					model: this.settings.openRouterModel,
-					autoOptimize: this.settings.autoOptimizePrompt,
-					usedOptimized: this.useOptimized,
+					autoOptimize: false,
+					usedOptimized,
 				},
 			});
 			new Notice("Research job submitted.");
