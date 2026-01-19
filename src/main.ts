@@ -41,6 +41,8 @@ export default class TuonDeepResearchPlugin extends Plugin {
 			this.settings.includeOptimizedPromptInNote
 		);
 
+		this.jobManager.resumeIncompleteJobs(200);
+
 		this.registerView(VIEW_TYPE_RESEARCH_JOBS, (leaf) =>
 			new ResearchJobsView(leaf, this.repo, this.settings, this.jobManager)
 		);

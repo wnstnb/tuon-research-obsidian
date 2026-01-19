@@ -234,6 +234,15 @@ export class ResearchRepo {
 		);
 	}
 
+	listIncompleteJobs(limit = 50): ResearchJobRow[] {
+		return this.db.all<ResearchJobRow>(
+			`SELECT * FROM research_jobs
+			 WHERE status IS NULL OR lower(status) NOT IN ('completed', 'failed', 'cancelled')
+			 ORDER BY created_at DESC LIMIT ?;`,
+			[limit]
+		);
+	}
+
 	getJob(jobId: string): ResearchJobRow | null {
 		return this.db.get<ResearchJobRow>(`SELECT * FROM research_jobs WHERE job_id = ?;`, [jobId]);
 	}

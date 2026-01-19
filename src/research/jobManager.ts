@@ -36,6 +36,16 @@ export class ResearchJobManager {
 		this.includePromptSection = includePromptSection;
 	}
 
+	resumeIncompleteJobs(limit = 50): number {
+		const jobs = this.repo.listIncompleteJobs(limit);
+		jobs.forEach((job) => {
+			if (!this.isTerminalStatus(job.status)) {
+				this.startPolling(job.job_id);
+			}
+		});
+		return jobs.length;
+	}
+
 	async submitJob(payload: PromptContext): Promise<string> {
 		const response = await this.client.submitEnhancedJob({
 			instructions: payload.optimizedPrompt,
@@ -240,6 +250,10 @@ export class ResearchJobManager {
 		});
 
 		return rawEvents.length;
+	}
+
+	private isTerminalStatus(status?: string | null): boolean {
+		return ["completed", "failed", "cancelled"].includes((status || "").toLowerCase());
 	}
 
 	private insertEvent(event: ResearchEventRow): void {
