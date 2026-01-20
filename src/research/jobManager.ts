@@ -136,6 +136,9 @@ export class ResearchJobManager {
 
 		const normalizedResults = normalizeResults(status.results);
 		const extracted = extractReportData(normalizedResults);
+		// Prefer using the report's first line as the note title (the server should include an H1 title).
+		const derivedTitle = deriveTitleFromMarkdown(extracted.markdown);
+		if (derivedTitle) extracted.title = derivedTitle;
 		const eventCount = this.ingestResultEvents(jobId, normalizedResults, now, cached.eventCount);
 		this.cache.set(jobId, {
 			status: status.status,
@@ -279,6 +282,20 @@ type ExtractedReportData = {
 	totalSections: number | null;
 	exaResearchId: string | null;
 };
+
+function deriveTitleFromMarkdown(markdown: string | null | undefined): string | null {
+	const md = (markdown || "").trim();
+	if (!md) return null;
+	const lines = md.split(/\r?\n/);
+	let i = 0;
+	while (i < lines.length && !(lines[i] ?? "").trim()) i += 1;
+	if (i >= lines.length) return null;
+	const first = String(lines[i] ?? "").trim();
+	if (!first) return null;
+	const title = first.replace(/^#+\s*/, "").trim() || null;
+	if (!title) return null;
+	return title.slice(0, 180);
+}
 
 function extractReportData(data: any): ExtractedReportData {
 	const report =

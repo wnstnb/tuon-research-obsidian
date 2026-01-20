@@ -6,7 +6,6 @@ import { ResearchRepo } from "./db/researchRepo";
 import { DeepResearchClient } from "./research/deepResearchClient";
 import { ReportNoteWriter } from "./research/reportNoteWriter";
 import { ResearchJobManager } from "./research/jobManager";
-import { ResearchModal } from "./ui/ResearchModal";
 import { ResearchJobsView, VIEW_TYPE_RESEARCH_JOBS } from "./ui/ResearchJobsView";
 
 export default class TuonDeepResearchPlugin extends Plugin {
@@ -47,16 +46,8 @@ export default class TuonDeepResearchPlugin extends Plugin {
 			new ResearchJobsView(leaf, this.repo, this.settings, this.jobManager)
 		);
 
-		this.addRibbonIcon("search", "Deep Research", () => {
-			new ResearchModal(this.app, this.settings, this.jobManager).open();
-		});
-
-		this.addCommand({
-			id: "tuon-deep-research-open-modal",
-			name: "Tuon: Deep Research",
-			callback: () => {
-				new ResearchModal(this.app, this.settings, this.jobManager).open();
-			},
+		this.addRibbonIcon("brain-circuit", "Deep Research Jobs", () => {
+			void this.activateJobsView();
 		});
 
 		this.addCommand({

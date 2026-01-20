@@ -44,6 +44,10 @@ export class ResearchJobsView extends ItemView {
 		return "Deep Research Jobs";
 	}
 
+	getIcon(): string {
+		return "brain-circuit";
+	}
+
 	async onOpen() {
 		await this.render();
 	}
