@@ -2,16 +2,20 @@ import { App, Modal, Notice, Setting } from "obsidian";
 import { DeepResearchSettings } from "../settings";
 import { optimizePrompt } from "../ai/promptOptimizer";
 import { ResearchJobManager } from "../research/jobManager";
+import { TaggablePromptInput } from "./TaggablePromptInput";
+import { resolveTaggedDocuments, TaggedFileReference } from "../utils/taggedDocuments";
 
 export class ResearchModal extends Modal {
 	private settings: DeepResearchSettings;
 	private jobManager: ResearchJobManager;
-	private promptInput!: HTMLTextAreaElement;
+	private promptInput!: TaggablePromptInput;
 	private optimizedOutput!: HTMLTextAreaElement;
 	private optimizeButton!: HTMLButtonElement;
 	private submitButton!: HTMLButtonElement;
 	private optimizing = false;
 	private optimizedPrompt = "";
+	private promptDraft = "";
+	private taggedDocuments: TaggedFileReference[] = [];
 
 	constructor(app: App, settings: DeepResearchSettings, jobManager: ResearchJobManager) {
 		super(app);
@@ -26,9 +30,17 @@ export class ResearchModal extends Modal {
 
 		contentEl.createEl("h2", { text: "Deep Research" });
 
-		this.promptInput = contentEl.createEl("textarea", {
-			cls: "tuon-research-textarea",
-			attr: { placeholder: "Enter your research prompt..." },
+		this.promptInput = new TaggablePromptInput({
+			app: this.app,
+			container: contentEl,
+			placeholder: "Enter your research prompt... Type @ to tag documents or folders.",
+			inputClassName: "tuon-research-textarea",
+			initialText: this.promptDraft,
+			initialTags: this.taggedDocuments,
+			onChange: ({ text, tags }) => {
+				this.promptDraft = text;
+				this.taggedDocuments = tags;
+			},
 		});
 
 		const controls = contentEl.createDiv({ cls: "tuon-research-controls" });
@@ -46,7 +58,8 @@ export class ResearchModal extends Modal {
 	}
 
 	private async handleOptimize() {
-		const rawPrompt = this.promptInput.value.trim();
+		const { text, tags } = this.promptInput.getValue();
+		const rawPrompt = text.trim();
 		if (!rawPrompt) {
 			new Notice("Enter a prompt first.");
 			return;
@@ -57,6 +70,14 @@ export class ResearchModal extends Modal {
 		}
 		this.setOptimizing(true);
 		try {
+			const taggedDocsResult = tags.length
+				? await resolveTaggedDocuments(this.app, tags)
+				: { documents: [], missing: [], truncated: [] };
+			if (taggedDocsResult.missing.length) {
+				new Notice(
+					`Some tagged documents couldn't be found: ${taggedDocsResult.missing.join(", ")}`
+				);
+			}
 			this.optimizedPrompt = await optimizePrompt(
 				{
 					apiKey: this.settings.openRouterApiKey,
@@ -64,7 +85,10 @@ export class ResearchModal extends Modal {
 					referer: this.settings.openRouterReferer,
 					appTitle: this.settings.openRouterAppTitle,
 				},
-				rawPrompt
+				rawPrompt,
+				{
+					taggedDocuments: taggedDocsResult.documents,
+				}
 			);
 			this.optimizedOutput.value = this.optimizedPrompt;
 			new Notice("Prompt optimized.");
@@ -77,7 +101,8 @@ export class ResearchModal extends Modal {
 	}
 
 	private async handleSubmit() {
-		const rawPrompt = this.promptInput.value.trim();
+		const { text, tags } = this.promptInput.getValue();
+		const rawPrompt = text.trim();
 		if (!rawPrompt) {
 			new Notice("Enter a prompt first.");
 			return;
@@ -88,6 +113,14 @@ export class ResearchModal extends Modal {
 		const usedOptimized = !!optimizedPrompt;
 		const now = new Date().toISOString();
 		try {
+			const taggedDocsResult = tags.length
+				? await resolveTaggedDocuments(this.app, tags)
+				: { documents: [], missing: [], truncated: [] };
+			if (taggedDocsResult.missing.length) {
+				new Notice(
+					`Some tagged documents couldn't be found: ${taggedDocsResult.missing.join(", ")}`
+				);
+			}
 			await this.jobManager.submitJob({
 				originalPrompt: rawPrompt,
 				optimizedPrompt: promptToUse,
@@ -97,6 +130,7 @@ export class ResearchModal extends Modal {
 					autoOptimize: false,
 					usedOptimized,
 				},
+				taggedDocuments: taggedDocsResult.documents,
 			});
 			new Notice("Research job submitted.");
 			this.close();

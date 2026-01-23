@@ -7,6 +7,7 @@ export type TaggedDocument = {
 	id: string;
 	title: string;
 	content?: string;
+	path?: string;
 };
 
 const SYSTEM_PROMPT = `You will be given a research task by a user. Your job is to produce a set of instructions for a researcher who will carry out the task.
@@ -46,18 +47,54 @@ Focus on creating clear, comprehensive research instructions that properly utili
 
 Format the response using markdown.`;
 
+const PLANNING_SYSTEM_PROMPT = `You are a planning assistant. Your job is to analyze the user's request alongside any tagged documents.
+
+Return a concise markdown plan that:
+- Summarizes how the user intends to use the documents
+- Extracts the most relevant takeaways from the documents
+- Specifies how those takeaways should shape the final research instructions
+
+Do NOT write the final research instructions. Be specific and grounded only in the provided document content.`;
+
 export function buildPromptOptimizerSystemPrompt(): string {
 	return SYSTEM_PROMPT.trim();
+}
+
+export function buildPromptOptimizerPlanningSystemPrompt(): string {
+	return PLANNING_SYSTEM_PROMPT.trim();
+}
+
+export function buildPromptOptimizerPlanningPrompt(input: {
+	originalPrompt: string;
+	taggedDocuments: TaggedDocument[];
+}): string {
+	const originalPrompt = input.originalPrompt.trim();
+	const taggedDocuments = input.taggedDocuments ?? [];
+	const documentsText = formatTaggedDocumentsForPlanning(taggedDocuments);
+
+	return `User request: "${originalPrompt}"
+
+Tagged documents:
+${documentsText}
+
+Produce a concise markdown plan with these sections:
+1. **Intent with documents** — What the user is trying to do with the tagged docs
+2. **Key takeaways** — Bullet list of specific relevant points
+3. **How to apply** — How the final research instructions should use the docs
+
+Return only the markdown plan.`;
 }
 
 export function buildPromptOptimizerUserPrompt(input: {
 	originalPrompt: string;
 	questionsAndAnswers?: QuestionAnswer[];
 	taggedDocuments?: TaggedDocument[];
+	documentPlan?: string;
 }): string {
 	const originalPrompt = input.originalPrompt.trim();
 	const questionsAndAnswers = input.questionsAndAnswers ?? [];
 	const taggedDocuments = input.taggedDocuments ?? [];
+	const documentPlan = input.documentPlan?.trim();
 
 	let documentContext = "";
 	let documentUsageInstructions = "";
@@ -117,7 +154,11 @@ export function buildPromptOptimizerUserPrompt(input: {
 		? `\nUser provided these clarifications:\n${questionsText}`
 		: "\nNo additional clarifications provided - optimize based on the original request only.";
 
-	return `Original research request: "${originalPrompt}"${clarificationsSection}${documentContext}${documentUsageInstructions}
+	const documentPlanSection = documentPlan
+		? `\n\nDocument analysis summary:\n${documentPlan}`
+		: "";
+
+	return `Original research request: "${originalPrompt}"${clarificationsSection}${documentContext}${documentUsageInstructions}${documentPlanSection}
 
 Transform this into comprehensive research instructions that:
 1. ${questionsText ? "Incorporate ALL user clarifications and preferences" : "Enhance the original request with clear specifications"}
@@ -126,8 +167,20 @@ Transform this into comprehensive research instructions that:
 4. Specify output format (tables, structured reports, etc.) in markdown if beneficial
 5. Include any relevant source preferences or constraints
 6. Maintain the user's original intent while adding clarity and completeness
-7. ${taggedDocuments.length > 0 ? "Provide specific guidance on how to use the tagged document(s) according to the detected intent" : ""}
+7. ${taggedDocuments.length > 0 ? "Provide specific guidance on how to use the tagged document(s), using the document analysis summary if provided" : ""}
 8. Ensure the final response is no more than 4000 characters long
 
 Return ONLY the optimized research instructions in markdown. Do not include JSON formatting or additional commentary.`;
+}
+
+function formatTaggedDocumentsForPlanning(taggedDocuments: TaggedDocument[]): string {
+	if (!taggedDocuments.length) return "None.";
+	return taggedDocuments
+		.map((doc, index) => {
+			const title = doc.title?.trim() || `Document ${index + 1}`;
+			const path = doc.path ? ` (${doc.path})` : "";
+			const content = doc.content?.trim() ? doc.content.trim() : "[No content provided]";
+			return `${index + 1}. ${title}${path}\n${content}`;
+		})
+		.join("\n\n");
 }

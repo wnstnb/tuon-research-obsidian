@@ -3,6 +3,8 @@ import { optimizePrompt } from "../ai/promptOptimizer";
 import { ResearchRepo, ResearchJobRow } from "../db/researchRepo";
 import { ResearchJobManager } from "../research/jobManager";
 import { DeepResearchSettings } from "../settings";
+import { TaggablePromptInput } from "./TaggablePromptInput";
+import { resolveTaggedDocuments, TaggedFileReference } from "../utils/taggedDocuments";
 
 export const VIEW_TYPE_RESEARCH_JOBS = "tuon-research-jobs";
 
@@ -17,6 +19,8 @@ export class ResearchJobsView extends ItemView {
 	private promptDraft = "";
 	private optimizedPrompt = "";
 	private lastRawPrompt = "";
+	private promptTaggedDocuments: TaggedFileReference[] = [];
+	private promptInput?: TaggablePromptInput;
 	private optimizing = false;
 	private submitting = false;
 	private detailInstructionsCollapsed = true;
@@ -133,18 +137,23 @@ export class ResearchJobsView extends ItemView {
 		};
 
 		const inputCard = section.createEl("div", { cls: "tuon-dr-input-card" });
-		const textarea = inputCard.createEl("textarea", {
-			cls: "tuon-dr-textarea",
-			attr: { placeholder: "Enter your research instructions..." },
-		});
-		textarea.value = this.promptDraft;
-		textarea.addEventListener("input", () => {
-			this.promptDraft = textarea.value;
-			if (this.optimizedPrompt && textarea.value !== this.optimizedPrompt) {
-				this.optimizedPrompt = "";
-				this.lastRawPrompt = "";
-			}
-			updateButtonState();
+		this.promptInput = new TaggablePromptInput({
+			app: this.app,
+			container: inputCard,
+			placeholder: "Enter your research instructions... Type @ to tag documents or folders.",
+			inputClassName: "tuon-dr-textarea",
+			initialText: this.promptDraft,
+			initialTags: this.promptTaggedDocuments,
+			onChange: ({ text, tags }) => {
+				const tagsChanged = !this.areTaggedDocumentsEqual(this.promptTaggedDocuments, tags);
+				this.promptDraft = text;
+				this.promptTaggedDocuments = tags;
+				if (this.optimizedPrompt && (text !== this.optimizedPrompt || tagsChanged)) {
+					this.optimizedPrompt = "";
+					this.lastRawPrompt = "";
+				}
+				updateButtonState();
+			},
 		});
 		updateButtonState();
 	}
@@ -398,6 +407,14 @@ export class ResearchJobsView extends ItemView {
 		this.optimizing = true;
 		void this.render();
 		try {
+			const taggedDocsResult = this.promptTaggedDocuments.length
+				? await resolveTaggedDocuments(this.app, this.promptTaggedDocuments)
+				: { documents: [], missing: [], truncated: [] };
+			if (taggedDocsResult.missing.length) {
+				new Notice(
+					`Some tagged documents couldn't be found: ${taggedDocsResult.missing.join(", ")}`
+				);
+			}
 			this.optimizedPrompt = await optimizePrompt(
 				{
 					apiKey: this.settings.openRouterApiKey,
@@ -405,7 +422,10 @@ export class ResearchJobsView extends ItemView {
 					referer: this.settings.openRouterReferer,
 					appTitle: this.settings.openRouterAppTitle,
 				},
-				rawPrompt
+				rawPrompt,
+				{
+					taggedDocuments: taggedDocsResult.documents,
+				}
 			);
 			this.lastRawPrompt = rawPrompt;
 			this.promptDraft = this.optimizedPrompt;
@@ -434,6 +454,14 @@ export class ResearchJobsView extends ItemView {
 		this.submitting = true;
 		void this.render();
 		try {
+			const taggedDocsResult = this.promptTaggedDocuments.length
+				? await resolveTaggedDocuments(this.app, this.promptTaggedDocuments)
+				: { documents: [], missing: [], truncated: [] };
+			if (taggedDocsResult.missing.length) {
+				new Notice(
+					`Some tagged documents couldn't be found: ${taggedDocsResult.missing.join(", ")}`
+				);
+			}
 			const jobId = await this.jobManager.submitJob({
 				originalPrompt,
 				optimizedPrompt: promptToUse,
@@ -443,10 +471,12 @@ export class ResearchJobsView extends ItemView {
 					autoOptimize: false,
 					usedOptimized,
 				},
+				taggedDocuments: taggedDocsResult.documents,
 			});
 			this.promptDraft = "";
 			this.optimizedPrompt = "";
 			this.lastRawPrompt = "";
+			this.promptTaggedDocuments = [];
 			this.selectedJobId = jobId;
 			this.activeTab = "history";
 			this.resetDetailCollapses();
@@ -497,6 +527,16 @@ export class ResearchJobsView extends ItemView {
 			month: "short",
 			day: "numeric",
 		});
+	}
+
+	private areTaggedDocumentsEqual(
+		left: TaggedFileReference[],
+		right: TaggedFileReference[]
+	): boolean {
+		if (left.length !== right.length) return false;
+		const leftIds = left.map((doc) => doc.id).sort();
+		const rightIds = right.map((doc) => doc.id).sort();
+		return leftIds.every((id, index) => id === rightIds[index]);
 	}
 
 	private getJobSearchText(job: ResearchJobRow): string {

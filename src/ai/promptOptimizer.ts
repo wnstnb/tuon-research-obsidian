@@ -2,6 +2,8 @@ import { openRouterChatCompletion } from "./openrouter";
 import {
 	buildPromptOptimizerSystemPrompt,
 	buildPromptOptimizerUserPrompt,
+	buildPromptOptimizerPlanningSystemPrompt,
+	buildPromptOptimizerPlanningPrompt,
 	QuestionAnswer,
 	TaggedDocument,
 } from "./promptOptimizerPrompts";
@@ -19,17 +21,31 @@ export type PromptOptimizerContext = {
 };
 
 const MAX_OPTIMIZED_PROMPT_LENGTH = 4096;
+const MAX_DOCUMENT_PLAN_TOKENS = 900;
 
 export async function optimizePrompt(
 	opts: PromptOptimizerOptions,
 	rawPrompt: string,
 	context: PromptOptimizerContext = {}
 ): Promise<string> {
+	let documentPlan: string | undefined;
+	if (context.taggedDocuments && context.taggedDocuments.length > 0) {
+		try {
+			documentPlan = await buildDocumentPlan({
+				opts,
+				rawPrompt,
+				taggedDocuments: context.taggedDocuments,
+			});
+		} catch (err) {
+			console.warn("Prompt optimizer document planning failed.", err);
+		}
+	}
 	const system = buildPromptOptimizerSystemPrompt();
 	const user = buildPromptOptimizerUserPrompt({
 		originalPrompt: rawPrompt,
 		questionsAndAnswers: context.questionsAndAnswers,
 		taggedDocuments: context.taggedDocuments,
+		documentPlan,
 	});
 	const optimized = await openRouterChatCompletion(
 		{
@@ -56,6 +72,34 @@ export async function optimizePrompt(
 		referer: opts.referer,
 		appTitle: opts.appTitle,
 	});
+}
+
+async function buildDocumentPlan(args: {
+	opts: PromptOptimizerOptions;
+	rawPrompt: string;
+	taggedDocuments: TaggedDocument[];
+}): Promise<string> {
+	const system = buildPromptOptimizerPlanningSystemPrompt();
+	const user = buildPromptOptimizerPlanningPrompt({
+		originalPrompt: args.rawPrompt,
+		taggedDocuments: args.taggedDocuments,
+	});
+	return openRouterChatCompletion(
+		{
+			apiKey: args.opts.apiKey,
+			model: args.opts.model,
+			referer: args.opts.referer,
+			appTitle: args.opts.appTitle,
+		},
+		{
+			messages: [
+				{ role: "system", content: system },
+				{ role: "user", content: user },
+			],
+			temperature: 0.2,
+			max_output_tokens: MAX_DOCUMENT_PLAN_TOKENS,
+		}
+	);
 }
 
 async function distillToMaxChars(args: {

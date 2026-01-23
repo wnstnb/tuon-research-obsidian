@@ -6,7 +6,8 @@ available in the app when your plugin is enabled.
 If your plugin does not need CSS, delete this file.
 
 */
-.tuon-research-modal textarea.tuon-research-textarea {
+.tuon-research-modal textarea.tuon-research-textarea,
+.tuon-research-modal .tuon-research-textarea {
 	width: 100%;
 	min-height: 120px;
 	resize: vertical;
@@ -182,6 +183,223 @@ If your plugin does not need CSS, delete this file.
 	min-height: 220px;
 	resize: vertical;
 	background: transparent;
+}
+
+.tuon-tag-input {
+	position: relative;
+}
+
+.tuon-tag-input-editor {
+	width: 100%;
+	outline: none;
+	white-space: pre-wrap;
+	word-break: break-word;
+	padding: 14px 56px 6px 6px;
+}
+
+.tuon-tag-input-editor:empty::before {
+	content: attr(data-placeholder);
+	color: var(--text-muted);
+}
+
+.tuon-tag-input-counter {
+	position: absolute;
+	top: 6px;
+	right: 10px;
+	font-size: 11px;
+	color: var(--text-muted);
+	letter-spacing: 0.02em;
+}
+
+.tuon-tag-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 2px 6px;
+	border-radius: 999px;
+	background: var(--background-modifier-border);
+	color: var(--text-normal);
+	font-size: 12px;
+	margin: 0 2px;
+	vertical-align: middle;
+}
+
+.tuon-tag-pill-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 12px;
+	height: 12px;
+	color: var(--text-muted);
+}
+
+.tuon-tag-pill-folder {
+	background: var(--background-modifier-hover);
+}
+
+.tuon-tag-pill-remove {
+	cursor: pointer;
+	color: var(--text-muted);
+	font-weight: 600;
+}
+
+.tuon-tag-pill-remove:hover {
+	color: var(--text-normal);
+}
+
+.tuon-tag-input-menu {
+	position: absolute;
+	z-index: 1000;
+	min-width: 220px;
+	max-width: 420px;
+	overflow: hidden;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	background: var(--background-secondary);
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+	padding: 4px;
+}
+
+.tuon-tag-input-menu.is-hidden {
+	display: none;
+}
+
+.tuon-tag-input-menu-item {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	width: 100%;
+	text-align: left;
+	padding: 8px 10px;
+	border: none;
+	border-radius: 6px;
+	background: transparent;
+	cursor: pointer;
+	min-height: 44px;
+	justify-content: center;
+	align-items: stretch;
+}
+
+.tuon-tag-input-menu-item.is-disabled {
+	cursor: not-allowed;
+	color: var(--text-muted);
+}
+
+.tuon-tag-input-menu-item.is-category {
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.tuon-tag-input-menu-item.is-action .tuon-tag-input-menu-row {
+	justify-content: flex-start;
+}
+
+.tuon-tag-input-menu-list {
+	max-height: 240px;
+	overflow-y: auto;
+}
+
+.tuon-tag-input-menu-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	width: 100%;
+}
+
+.tuon-tag-input-menu-left {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-width: 0;
+	flex: 1;
+}
+
+.tuon-tag-input-menu-text {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+	flex: 1;
+}
+
+.tuon-tag-input-menu-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 16px;
+	height: 16px;
+	color: var(--text-muted);
+	flex: 0 0 auto;
+}
+
+.tuon-tag-input-menu-arrow {
+	color: var(--text-muted);
+	font-size: 14px;
+}
+
+.tuon-tag-input-menu-item.is-active,
+.tuon-tag-input-menu-item:hover {
+	background: var(--background-modifier-hover);
+}
+
+.tuon-tag-input-menu-title {
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 1.5;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	overflow: hidden;
+}
+
+.tuon-tag-input-menu-path {
+	font-size: 11px;
+	color: var(--text-muted);
+	line-height: 1.35;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	overflow: hidden;
+}
+
+.tuon-tag-input-preview {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 8px;
+	margin-bottom: 4px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	background: var(--background-primary);
+}
+
+.tuon-tag-input-preview.is-hidden {
+	display: none;
+}
+
+.tuon-tag-input-preview-label {
+	font-size: 11px;
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.tuon-tag-input-preview-title {
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.tuon-tag-input-preview-path {
+	font-size: 11px;
+	color: var(--text-muted);
+}
+
+.tuon-tag-input-preview-content {
+	font-size: 12px;
+	white-space: pre-wrap;
+	max-height: 140px;
+	overflow: hidden;
 }
 
 .tuon-dr-history-list {
